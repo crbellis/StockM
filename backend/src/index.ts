@@ -3,7 +3,13 @@ import * as dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { userRouter } from "./user/user.router";
 import { iexRouter } from "./iex/iex.router";
+
+const routerWrapper = (router: express.Router) => {
+	app.use("/api/", router);
+};
+
 dotenv.config();
 
 if (!process.env.PORT) {
@@ -16,7 +22,8 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use("/api/", iexRouter);
+routerWrapper(userRouter);
+routerWrapper(iexRouter);
 
 app.listen(PORT, () => {
 	console.log(`Listening on port ${PORT}`);

@@ -1,16 +1,8 @@
 import * as dotenv from "dotenv";
-import { Pool, QueryResult } from "pg";
-import { User } from "./psql.interfaces";
+import { QueryResult } from "pg";
+import { pool } from "../psql/psqlConfig";
+import { User } from "./user.interfaces";
 dotenv.config();
-
-// Instantiating postgres connection
-const pool = new Pool({
-	user: process.env.PSQL_USER,
-	host: process.env.PSQL_HOST,
-	database: "backend",
-	password: process.env.PSQL_PW,
-	port: parseInt(process.env.PSQL_PORT!),
-});
 
 /**
  * This function creates a user by adding the passed {@link User User} object
@@ -33,6 +25,7 @@ export const createUser = async ({
 	password,
 }: User): Promise<number> => {
 	try {
+		email = email.toLowerCase();
 		const res: User | undefined = await findUser(email);
 		if (res !== undefined) {
 			return 409;
@@ -44,7 +37,7 @@ export const createUser = async ({
 		);
 		return 201;
 	} catch (error) {
-		console.log(error);
+		console.log("CREATE USER ERROR: ", error);
 		return 400;
 	}
 };
@@ -67,7 +60,7 @@ export const findUser = async (
 		let queryParameter = undefined;
 		if (id) queryParameter = `id = ${id}`;
 		else {
-			queryParameter = `email = '${email}'`;
+			queryParameter = `email = '${email.toLowerCase()}'`;
 		}
 		const { rows }: QueryResult = await pool.query(
 			`SELECT * FROM users where ${queryParameter};`
