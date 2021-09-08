@@ -6,6 +6,7 @@ import Trending from "./Trending";
 import { NavLink } from "react-router-dom";
 import Portfolio from "./DashboardPortfolio/Portfolio";
 import DonutChart from "./DonutChart/DonutChart";
+import { getSettings } from "../API/API";
 
 type lineTypes = "monotone" | undefined;
 
@@ -24,7 +25,11 @@ const Dashboard = () => {
 		const temp = lineTypeUI[line];
 		setLineType(temp);
 	};
-	// const [filter, setFilter] = React.useState<string>("");
+
+	React.useEffect(() => {
+		getSettings();
+	}, []);
+
 	return (
 		<div className="w-full h-full p-10 flex flex-col">
 			<Header />

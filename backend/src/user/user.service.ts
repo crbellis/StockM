@@ -20,8 +20,8 @@ dotenv.config();
  */
 export const createUser = async ({
 	email,
-	firstName,
-	lastName,
+	first_name,
+	last_name,
 	password,
 }: User): Promise<number> => {
 	try {
@@ -33,7 +33,7 @@ export const createUser = async ({
 		await pool.query(
 			"INSERT INTO users (email, first_name, last_name, password)" +
 				"VALUES ($1, $2, $3, $4) RETURNING ID;",
-			[email, firstName, lastName, password]
+			[email, first_name, last_name, password]
 		);
 		return 201;
 	} catch (error) {
@@ -69,6 +69,31 @@ export const findUser = async (
 		return user;
 	} catch (error) {
 		console.log(error);
+		return;
+	}
+};
+
+export const storeRefreshToken = async (
+	token: string
+): Promise<"success" | "failed"> => {
+	try {
+		pool.query("INSERT INTO refreshTokens (token) VALUES ($1);", [token]);
+		return "success";
+	} catch (e) {
+		console.log(e);
+		return "failed";
+	}
+};
+
+export const getToken = async (token: string): Promise<string | undefined> => {
+	try {
+		const { rows }: QueryResult = await pool.query(
+			`SELECT token FROM refreshTokens WHERE token = '${token}';`
+		);
+		const currentToken: string = rows[0]["token"];
+		return currentToken;
+	} catch (error) {
+		console.log("getToken error: ", error);
 		return;
 	}
 };

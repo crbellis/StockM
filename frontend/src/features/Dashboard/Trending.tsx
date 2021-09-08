@@ -6,12 +6,14 @@ const Trending = () => {
 	return (
 		<div className="w-10/12 h-5/6 border-2 border-gray-100 rounded-2xl my-5 flex justify-center">
 			<table className="table-auto border-separate m-3 text-center w-full text-sm text-gray-500">
-				<tr className="h-5">
-					<th className="p-3 px-5">#</th>
-					<th>Name</th>
-					<th>Price</th>
-					<th>Change</th>
-				</tr>
+				<thead>
+					<tr className="h-5">
+						<th className="p-3 px-5">#</th>
+						<th>Name</th>
+						<th>Price</th>
+						<th>Change</th>
+					</tr>
+				</thead>
 				<tbody className="text-center font-semibold">
 					<tr className="text-md text-[#182c5c]">
 						<td>1</td>

@@ -1,7 +1,64 @@
 import React from "react";
 import finance from "../../assets/finance.svg";
 import "./Login.css";
+import { Redirect, useLocation } from "react-router";
+import { authenticate, selectUser } from "./loginSlice";
+import { useDispatch, useSelector } from "react-redux";
+import Cookies from "js-cookie";
+
 const Login = () => {
+	const dispatch = useDispatch();
+	const user = useSelector(selectUser);
+	const location = useLocation<{ from: { pathname: string } }>();
+	const [userCreds, setUserCreds] = React.useState<{
+		email?: string;
+		password?: string;
+	}>({});
+	const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
+
+	const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		event.preventDefault();
+		let temp = userCreds;
+		if (
+			event.currentTarget.name === "email" ||
+			event.currentTarget.name === "password"
+		) {
+			temp[event.currentTarget.name] = event.currentTarget.value;
+			setUserCreds(temp);
+		}
+	};
+
+	const handleSubmit = async (event: React.SyntheticEvent) => {
+		setIsSubmitting(true);
+		event.preventDefault();
+		const target = event.currentTarget as typeof event.currentTarget & {
+			email: { value: string };
+			password: { value: string };
+		};
+		const email = target.email.value;
+		const password = target.password.value;
+
+		try {
+			dispatch(authenticate({ email, password }));
+			setIsSubmitting(false);
+			return <Redirect to="/dashboard" />;
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	if (user.authed) {
+		Cookies.set("accessToken", user.accessToken!, {
+			sameSite: "Strict",
+			secure: true,
+		});
+		Cookies.set("refreshToken", user.refreshToken!, {
+			sameSite: "Strict",
+			secure: true,
+		});
+		return <Redirect to={location?.state?.from || "/dashboard"} />;
+	}
+
 	return (
 		<div className="w-screen h-screen flex justify-center items-center bg-[#f1f9f9]">
 			<div className="hidden w-1/2 h-full items-center justify-center md:flex">
@@ -38,12 +95,20 @@ const Login = () => {
 				<div className="font-bold text-xl">Welcome to StockM</div>
 				<div className="text-sm mb-2 mt-2">
 					Don't have an account?
-					<a href="#" className="ml-1 text-[#12b376]">
+					<a href="/test" className="ml-1 text-[#12b376]">
 						Sign up
 					</a>
 				</div>
 				<div className="p-5 w-96 h-[430px] rounded-lg">
-					<form className="flex flex-col text-left">
+					<form
+						className="flex flex-col text-left"
+						onSubmit={handleSubmit}
+					>
+						{user.status === "failed" && (
+							<div className="text-sm text-red-500 text-center m-1 transition-all 200ms ease-in-out">
+								Invalid email or password
+							</div>
+						)}
 						<label className="mb-1">Email</label>
 						<input
 							type="email"
@@ -51,6 +116,7 @@ const Login = () => {
 							autoComplete="email"
 							className="bg-gray-100 border border-gray-300 rounded px-3 pb-1 pt-2 shadow-sm
 							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376]"
+							onChange={handleChange}
 						/>
 						<label htmlFor="password" className="mb-1 mt-5">
 							Password
@@ -61,8 +127,9 @@ const Login = () => {
 							autoComplete="password"
 							className="bg-gray-100 border border-gray-300 rounded px-3 pb-1 pt-2 shadow-sm
 							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376]"
+							onChange={handleChange}
 						/>
-						<a href="#" className="mt-3 text-sm text-[#12b376]">
+						<a href="/" className="mt-3 text-sm text-[#12b376]">
 							Forgot your password?
 						</a>
 						{/* <div className="mt-5 flex items-center">
@@ -90,9 +157,12 @@ const Login = () => {
 								.
 							</label>
 						</div> */}
-						<button className="mt-8 bg-[#12b376] p-3 rounded text-white shadow-md hover:bg-[#1b8a65] transition 300ms ease-in-out">
-							Log in
-						</button>
+						<input
+							type="submit"
+							value="Log in"
+							disabled={isSubmitting}
+							className="disabled:cursor-wait disabled:opacity-50 disabled:bg-[#0d4432] mt-8 bg-[#12b376] p-3 rounded text-white shadow-md hover:bg-[#1b8a65] transition 300ms ease-in-out"
+						/>
 					</form>
 				</div>
 			</div>

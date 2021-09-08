@@ -1,6 +1,6 @@
 import React from "react";
 import Navbar from "../Navbar/Navbar";
-import { Route, Switch } from "react-router";
+import { Route } from "react-router";
 import Dashboard from "../Dashboard/Dashboard";
 
 const Home = () => {

@@ -1,10 +1,44 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { User } from "./user.interfaces";
-import { findUser, createUser } from "./user.service";
-import fetch from "node-fetch";
-import { hashSync, compareSync, genSaltSync, compare } from "bcryptjs";
+import { createUser, storeRefreshToken } from "./user.service";
+import { hashSync, genSaltSync } from "bcryptjs";
+import passport from "passport";
+import jwt from "jsonwebtoken";
 
 export const userRouter = express.Router();
+
+export const authenticateToken = (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const authHeader = req.headers["authorization"];
+	const token: string | null = authHeader ? authHeader.split(" ")[1] : null;
+	if (token === null) {
+		return res.status(401);
+	}
+	jwt.verify(token!, process.env.ACCESS_TOKEN_SECRET!, (err, user) => {
+		if (err) {
+			return res.status(403).json({ error: err["message"] });
+		}
+		console.log("AUTHENTICATED: ", user);
+		req.user = user;
+		next();
+	});
+};
+
+export const generateAccessToken = (user: Express.User) => {
+	console.log("GEN USER", user);
+	return jwt.sign(user as object, process.env.ACCESS_TOKEN_SECRET!, {
+		expiresIn: "60s",
+	});
+};
+
+export const generateRefreshToken = (user: Express.User) => {
+	return jwt.sign(user as object, process.env.REFRESH_TOKEN_SECRET!, {
+		expiresIn: "7d",
+	});
+};
 
 userRouter.post("/signup", async (req: Request, res: Response) => {
 	try {
@@ -23,22 +57,39 @@ userRouter.post("/signup", async (req: Request, res: Response) => {
 	}
 });
 
-userRouter.post("/login", async (req: Request, res: Response) => {
-	try {
-		const { email, password } = req.body;
-		const user: User | undefined = await findUser(email);
-		console.log(user);
-		if (user !== undefined) {
-			const doesPasswordMatch = compareSync(password, user.password);
-			console.log(doesPasswordMatch);
-			if (doesPasswordMatch) {
-				res.status(200).json({ message: "successfully logged in" });
-				return;
+userRouter.post(
+	"/login",
+	passport.authenticate("local"),
+	async (req: Request, res: Response) => {
+		console.log("POST /login");
+		console.log("SENT USER", req.user);
+		// create access token
+		let accessToken = generateAccessToken(req.user!);
+		// create refreshToken
+		let refreshToken = generateRefreshToken(req.user!);
+		try {
+			const tokenStatus: "success" | "failed" = await storeRefreshToken(
+				refreshToken
+			);
+			if (tokenStatus === "success") {
+				return res.status(200).json({
+					...req.user,
+					accessToken,
+					refreshToken,
+				});
 			}
+			return res.status(400).sendStatus(400);
+		} catch (e) {
+			console.log(e);
+			res.status(500);
 		}
-		res.status(400).sendStatus(400);
-	} catch (error) {
-		console.log(error);
-		res.status(500).json({ error: error });
 	}
-});
+);
+
+userRouter.get(
+	"/settings",
+	authenticateToken,
+	(req: Request, res: Response, next: NextFunction) => {
+		res.status(200).json({ msg: "CONGRATS" });
+	}
+);
