@@ -1,5 +1,10 @@
 import NotificationPopover from "./NotificationPopover";
+import { selectUser } from "../Login/loginSlice";
+import { useSelector } from "react-redux";
+import Account from "./Account";
 const Header = () => {
+	const user = useSelector(selectUser);
+	const initial = user.firstName?.charAt(0) ? user.firstName?.charAt(0) : "";
 	return (
 		<header className="flex flex-row justify-between items-center">
 			<div>
@@ -10,7 +15,7 @@ const Header = () => {
 					</span>
 				</div>
 				<div className="mt-3 text-gray-400">
-					Good morning, Chase Bellisime
+					Good morning, {user.firstName} {user.lastName}
 				</div>
 			</div>
 			<div className="flex flex-row items-center">
@@ -20,8 +25,8 @@ const Header = () => {
 						<NotificationPopover />
 					</div>
 				</div>
-				<div className="mx-5 font-semibold text-lg flex w-9 h-9 bg-green-200 rounded-full text-center justify-center items-center text-green-700 border-2 border-white shadow-md">
-					C
+				<div>
+					<Account initial={initial} />
 				</div>
 			</div>
 		</header>

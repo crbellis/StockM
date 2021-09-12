@@ -1,6 +1,6 @@
 import Cookies from "js-cookie";
 
-const getAccessToken = async (token: string) => {
+export const getAccessToken = async (token: string) => {
 	try {
 		const res = await fetch("http://localhost:3001/api/token", {
 			method: "POST",
@@ -12,7 +12,6 @@ const getAccessToken = async (token: string) => {
 			}),
 		});
 		const { accessToken } = await res.json();
-		console.log("RESETING ACCESS:", accessToken);
 		Cookies.set("accessToken", accessToken, {
 			sameSite: "Strict",
 			secure: true,
@@ -56,7 +55,6 @@ const authFetch = async (
 				if (refreshToken) {
 					accessToken = await getAccessToken(refreshToken);
 					res = await fetch(uri, request);
-					console.log(res);
 				}
 				return res.status;
 			}
@@ -76,10 +74,32 @@ export const login = async (
 		const res = fetch("http://localhost:3001/api/login", {
 			method: "POST",
 			mode: "cors",
+			credentials: "include",
 			headers: {
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify({ email, password }),
+		});
+		return res;
+	} catch (e) {
+		console.log("ERROR:", e);
+		return;
+	}
+};
+
+export const signOutCall = async (): Promise<Response | undefined> => {
+	console.log("SIGNOUT API");
+	try {
+		const refreshToken = Cookies.get("refreshToken");
+		console.log(refreshToken);
+		const res = fetch("http://localhost:3001/api/signout", {
+			method: "POST",
+			mode: "cors",
+			credentials: "include",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ refreshToken: refreshToken }),
 		});
 		return res;
 	} catch (e) {
@@ -94,7 +114,7 @@ export const getSettings = async () => {
 			"GET",
 			"http://localhost:3001/api/settings"
 		);
-		console.log(res);
+		return res;
 	} catch (error) {
 		console.log(error);
 		return;

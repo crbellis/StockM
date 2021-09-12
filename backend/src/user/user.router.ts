@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import { User } from "./user.interfaces";
-import { createUser, storeRefreshToken } from "./user.service";
+import { createUser, deleteToken, storeRefreshToken } from "./user.service";
 import { hashSync, genSaltSync } from "bcryptjs";
 import passport from "passport";
 import jwt from "jsonwebtoken";
@@ -72,6 +72,14 @@ userRouter.post(
 				refreshToken
 			);
 			if (tokenStatus === "success") {
+				res.cookie("accessToken", accessToken, {
+					sameSite: "strict",
+					secure: true,
+				});
+				res.cookie("refreshToken", refreshToken, {
+					sameSite: "strict",
+					secure: true,
+				});
 				return res.status(200).json({
 					...req.user,
 					accessToken,
@@ -82,6 +90,22 @@ userRouter.post(
 		} catch (e) {
 			console.log(e);
 			res.status(500);
+		}
+	}
+);
+
+userRouter.post(
+	"/signout",
+	async (req: Request, res: Response, next: NextFunction) => {
+		console.log("SIGNOUT");
+		try {
+			res.clearCookie("accessToken");
+			res.clearCookie("refreshToken");
+			deleteToken(req.body["refreshToken"]);
+			res.status(200).sendStatus(200);
+		} catch (error) {
+			console.log(error);
+			res.status(400).sendStatus(400);
 		}
 	}
 );

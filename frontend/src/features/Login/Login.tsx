@@ -1,15 +1,18 @@
 import React from "react";
 import finance from "../../assets/finance.svg";
 import "./Login.css";
-import { Redirect, useLocation } from "react-router";
-import { authenticate, selectUser } from "./loginSlice";
+import { Redirect } from "react-router";
+import { authenticate, selectUser, tokenAuthenticate } from "./loginSlice";
 import { useDispatch, useSelector } from "react-redux";
 import Cookies from "js-cookie";
+import { getAccessToken } from "../API/API";
+import { selectHistory } from "../History/historySlice";
+import { NavLink } from "react-router-dom";
 
 const Login = () => {
 	const dispatch = useDispatch();
 	const user = useSelector(selectUser);
-	const location = useLocation<{ from: { pathname: string } }>();
+	const history = useSelector(selectHistory);
 	const [userCreds, setUserCreds] = React.useState<{
 		email?: string;
 		password?: string;
@@ -41,22 +44,71 @@ const Login = () => {
 		try {
 			dispatch(authenticate({ email, password }));
 			setIsSubmitting(false);
-			return <Redirect to="/dashboard" />;
+			return (
+				<Redirect
+					to={history.prevPath ? history.prevPath : "/dashboard"}
+				/>
+			);
 		} catch (error) {
 			console.log(error);
 		}
 	};
 
+	// if new authentication, reset the cookies
 	if (user.authed) {
-		Cookies.set("accessToken", user.accessToken!, {
-			sameSite: "Strict",
-			secure: true,
-		});
-		Cookies.set("refreshToken", user.refreshToken!, {
-			sameSite: "Strict",
-			secure: true,
-		});
-		return <Redirect to={location?.state?.from || "/dashboard"} />;
+		return (
+			<Redirect to={history.prevPath ? history.prevPath : "/dashboard"} />
+		);
+	}
+
+	const handleCookieAuth = async (refreshToken: string) => {
+		const accessToken = await getAccessToken(refreshToken);
+		if (accessToken) {
+			Cookies.set("accessToken", accessToken!, {
+				sameSite: "Strict",
+				secure: true,
+			});
+			dispatch(tokenAuthenticate({ accessToken, refreshToken }));
+			// bug doesnt redirect to incoming location
+			console.log(history.prevPath);
+			return (
+				<Redirect
+					to={history.prevPath ? history.prevPath : "/dashboard"}
+				/>
+			);
+		}
+	};
+
+	const refreshToken = Cookies.get("refreshToken");
+	if (refreshToken && refreshToken !== "undefined" && !user.authed) {
+		handleCookieAuth(refreshToken);
+		return (
+			<div className="w-screen h-screen flex justify-center items-center">
+				<div className="flex items-center">
+					<svg
+						className="animate-spin -ml-1 mr-3 h-8 w-8 text-green-500"
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+					>
+						<circle
+							className="opacity-25"
+							cx="12"
+							cy="12"
+							r="10"
+							stroke="currentColor"
+							strokeWidth="4"
+						></circle>
+						<path
+							className="opacity-75"
+							fill="currentColor"
+							d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+						></path>
+					</svg>
+					<div className="opacity-75 text-lg">Authenticating...</div>
+				</div>
+			</div>
+		);
 	}
 
 	return (
@@ -95,9 +147,9 @@ const Login = () => {
 				<div className="font-bold text-xl">Welcome to StockM</div>
 				<div className="text-sm mb-2 mt-2">
 					Don't have an account?
-					<a href="/test" className="ml-1 text-[#12b376]">
+					<NavLink to="/signup" className="ml-1 text-[#12b376]">
 						Sign up
-					</a>
+					</NavLink>
 				</div>
 				<div className="p-5 w-96 h-[430px] rounded-lg">
 					<form

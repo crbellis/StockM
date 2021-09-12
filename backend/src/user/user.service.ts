@@ -77,7 +77,14 @@ export const storeRefreshToken = async (
 	token: string
 ): Promise<"success" | "failed"> => {
 	try {
-		pool.query("INSERT INTO refreshTokens (token) VALUES ($1);", [token]);
+		let expiry_date: Date | string | Array<string> = new Date();
+		expiry_date.setDate(expiry_date.getDate() + 7);
+		expiry_date = expiry_date.toISOString().split("T")[0];
+		console.log(expiry_date);
+		pool.query(
+			"INSERT INTO refreshTokens (token, expiry_date) VALUES ($1, $2);",
+			[token, expiry_date]
+		);
 		return "success";
 	} catch (e) {
 		console.log(e);
@@ -88,12 +95,28 @@ export const storeRefreshToken = async (
 export const getToken = async (token: string): Promise<string | undefined> => {
 	try {
 		const { rows }: QueryResult = await pool.query(
-			`SELECT token FROM refreshTokens WHERE token = '${token}';`
+			`SELECT token FROM refreshTokens WHERE token = '${token}' 
+			and expiry_date > current_date;`
 		);
 		const currentToken: string = rows[0]["token"];
 		return currentToken;
 	} catch (error) {
 		console.log("getToken error: ", error);
+		return;
+	}
+};
+
+export const deleteToken = async (
+	token: string
+): Promise<string | undefined> => {
+	try {
+		const { rows }: QueryResult = await pool.query(
+			`DELETE FROM refreshTokens where token = '${token}';`
+		);
+		console.log(rows);
+		return "success";
+	} catch (error) {
+		console.log("Error deleting");
 		return;
 	}
 };

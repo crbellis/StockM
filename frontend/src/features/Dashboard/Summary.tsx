@@ -56,10 +56,9 @@ const Summary = ({ lineType }: SummaryPropsTypes) => {
 		},
 	];
 
-	const labels = data.map((obj) => {
-		return obj["name"];
-	});
-	console.log(labels);
+	// const labels = data.map((obj) => {
+	// 	return obj["name"];
+	// });
 	return (
 		<div className="w-11/12 h-80 z-0">
 			<ResponsiveContainer width="100%">
