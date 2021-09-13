@@ -23,17 +23,20 @@ export const createUser = async ({
 	first_name,
 	last_name,
 	password,
+	agreedToPrivacyAndTOS,
 }: User): Promise<number> => {
 	try {
 		email = email.toLowerCase();
+		first_name = first_name[0].toUpperCase() + first_name.substring(1);
+		last_name = last_name[0].toUpperCase() + last_name.substring(1);
 		const res: User | undefined = await findUser(email);
 		if (res !== undefined) {
 			return 409;
 		}
 		await pool.query(
-			"INSERT INTO users (email, first_name, last_name, password)" +
-				"VALUES ($1, $2, $3, $4) RETURNING ID;",
-			[email, first_name, last_name, password]
+			"INSERT INTO users (email, first_name, last_name, password," +
+				"agreed_privacy_tos) VALUES ($1, $2, $3, $4, $5) RETURNING ID;",
+			[email, first_name, last_name, password, agreedToPrivacyAndTOS]
 		);
 		return 201;
 	} catch (error) {

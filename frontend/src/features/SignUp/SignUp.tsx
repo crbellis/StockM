@@ -1,9 +1,9 @@
 import React from "react";
 import account from "../../assets/Account.svg";
 import "./SignUp.css";
-import { Redirect } from "react-router";
+import { useHistory } from "react-router";
 import { NavLink } from "react-router-dom";
-import { type } from "os";
+import { signUp } from "../API/API";
 
 interface SignUpUser {
 	firstName?: string;
@@ -14,18 +14,19 @@ interface SignUpUser {
 	agreedToPrivacyAndTOS?: boolean;
 }
 
-type Keys = keyof SignUpUser;
-
-const Login = () => {
+const SignUp = () => {
+	const history = useHistory();
 	const [userCreds, setUserCreds] = React.useState<SignUpUser>({});
+	const [showCriteria, setShowCriteria] = React.useState<boolean>(false);
 	const [canSubmit, setCanSubmit] = React.useState<boolean>(false);
-	console.log(canSubmit);
 	const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
 
+	const handleBlur = () => {
+		setShowCriteria(!showCriteria);
+	};
 	const handleChange = <T extends keyof SignUpUser>(
 		event: React.ChangeEvent<HTMLInputElement>
 	) => {
-		event.preventDefault();
 		const { name } = event.currentTarget;
 		let value: string | boolean = event.currentTarget.value;
 		if (name === "agreedToPrivacyAndTOS") {
@@ -36,14 +37,14 @@ const Login = () => {
 		let temp: SignUpUser = { ...userCreds, [name]: value };
 		setUserCreds(temp as { [P in T]: SignUpUser[P] });
 		if (
-			temp["firstName"] !== undefined &&
-			temp["lastName"] !== undefined &&
-			temp["email"] !== undefined &&
-			temp["password"] !== undefined &&
+			Object.values(temp).indexOf(undefined) === -1 &&
+			Object.values(temp).indexOf("") === -1 &&
 			temp["password"] === temp["confirmedPassword"] &&
-			temp["agreedToPrivacyAndTOS"]
+			temp["agreedToPrivacyAndTOS"] === true
 		) {
 			setCanSubmit(true);
+		} else {
+			setCanSubmit(false);
 		}
 	};
 
@@ -51,15 +52,27 @@ const Login = () => {
 		setIsSubmitting(true);
 		event.preventDefault();
 		const target = event.currentTarget as typeof event.currentTarget & {
+			firstName: { value: string };
+			lastName: { value: string };
 			email: { value: string };
 			password: { value: string };
+			agreedToPrivacyAndTOS: { checked: boolean };
 		};
-		const email = target.email.value;
-		const password = target.password.value;
-
+		console.log(target);
+		const { firstName, lastName, email, password, agreedToPrivacyAndTOS } =
+			target;
+		const payload = {
+			first_name: firstName.value,
+			last_name: lastName.value,
+			email: email.value,
+			password: password.value,
+			agreedToPrivacyAndTOS: agreedToPrivacyAndTOS.checked,
+		};
 		try {
+			const res = await signUp(payload);
+			console.log(res?.status);
 			setIsSubmitting(false);
-			return <Redirect to={"/login"} />;
+			if (res?.status === 201) history.push("/login");
 		} catch (error) {
 			console.log(error);
 		}
@@ -104,7 +117,7 @@ const Login = () => {
 						login
 					</NavLink>
 				</div>
-				<div className="p-5 w-96 rounded-lg">
+				<div className="relative p-5 w-96 rounded-lg">
 					<form
 						className="flex flex-col text-left"
 						onSubmit={handleSubmit}
@@ -113,16 +126,18 @@ const Login = () => {
 						<input
 							type="text"
 							name="firstName"
+							placeholder="John"
 							className="bg-gray-100 border border-gray-300 rounded px-3 pb-1 pt-2 shadow-sm
-							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376]"
+							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376] placeholder-gray-400"
 							onChange={handleChange}
 						/>
 						<label className="mb-1 mt-5">Last name</label>
 						<input
 							type="text"
 							name="lastName"
+							placeholder="Smith"
 							className="bg-gray-100 border border-gray-300 rounded px-3 pb-1 pt-2 shadow-sm
-							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376]"
+							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376] placeholder-gray-400"
 							onChange={handleChange}
 						/>
 						<label className="mb-1 mt-5">Email</label>
@@ -130,20 +145,45 @@ const Login = () => {
 							type="email"
 							name="email"
 							autoComplete="email"
+							placeholder="john.smith@email.com"
 							className="bg-gray-100 border border-gray-300 rounded px-3 pb-1 pt-2 shadow-sm
-							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376]"
+							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376] placeholder-gray-400"
 							onChange={handleChange}
 						/>
+						{userCreds["password"] !==
+							userCreds["confirmedPassword"] && (
+							<div className="mt-5 mb-0 text-sm text-red-500 text-center m-1 transition-all 200ms ease-in-out">
+								Passwords don't match
+							</div>
+						)}
 						<label htmlFor="password" className="mb-1 mt-5">
 							Password
 						</label>
+						<div
+							className={
+								"absolute bottom-0 opacity-0 text-sm text-gray-400 mb-2 transition 800ms ease-in-out " +
+								`${
+									showCriteria
+										? "relative visible opacity-100"
+										: "invisible transform translate-y-5"
+								}`
+							}
+						>
+							Passwords must have 8 characters, 1 capital
+							character, 1 number, 1 specicial character
+						</div>
+
 						<input
 							type="password"
 							name="password"
 							autoComplete="password"
+							placeholder="password"
+							pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
 							className="bg-gray-100 border border-gray-300 rounded px-3 pb-1 pt-2 shadow-sm
-							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376]"
+							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376] placeholder-gray-400"
 							onChange={handleChange}
+							onFocus={handleBlur}
+							onBlur={handleBlur}
 						/>
 						<label htmlFor="password" className="mb-1 mt-5">
 							Confirm password
@@ -152,8 +192,9 @@ const Login = () => {
 							type="password"
 							name="confirmedPassword"
 							autoComplete="password"
+							placeholder="confirm password"
 							className="bg-gray-100 border border-gray-300 rounded px-3 pb-1 pt-2 shadow-sm
-							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376]"
+							focus:outline-none focus:border-[#12b376] focus:ring-1 focus:ring-[#12b376] placeholder-gray-400"
 							onChange={handleChange}
 						/>
 						<div className="mt-5 flex items-center">
@@ -195,4 +236,4 @@ const Login = () => {
 	);
 };
 
-export default Login;
+export default SignUp;

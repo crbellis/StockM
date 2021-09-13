@@ -66,6 +66,30 @@ const authFetch = async (
 	return;
 };
 
+export const signUp = async (user: {
+	first_name: string;
+	last_name: string;
+	email: string;
+	agreedToPrivacyAndTOS: boolean;
+	password: string;
+}) => {
+	try {
+		const res = fetch("http://localhost:3001/api/signup", {
+			method: "POST",
+			mode: "cors",
+			credentials: "include",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(user),
+		});
+		return res;
+	} catch (error) {
+		console.log(error);
+		return;
+	}
+};
+
 export const login = async (
 	email: string,
 	password: string

@@ -54,7 +54,6 @@ const Login = () => {
 		}
 	};
 
-	// if new authentication, reset the cookies
 	if (user.authed) {
 		return (
 			<Redirect to={history.prevPath ? history.prevPath : "/dashboard"} />

@@ -11,6 +11,7 @@
  * @field last_name - user's last name
  * @field email - user's email
  * @field password - hashed user password
+ * @field agreedToPrivacyAndTOS - boolean whether user agreed to privacy and terms of service
  * @field portfolio_id - unique portfolio id owned by the user
  */
 export interface User {
@@ -19,6 +20,7 @@ export interface User {
 	last_name: string;
 	email: string;
 	password: string;
+	agreedToPrivacyAndTOS: boolean;
 	portfolioId?: number;
 }
 

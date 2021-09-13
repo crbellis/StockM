@@ -46,12 +46,12 @@ userRouter.post("/signup", async (req: Request, res: Response) => {
 		user.password = hashSync(user.password, genSaltSync());
 		const resCode: number = await createUser(user);
 		if (resCode === 201) {
-			res.status(resCode).send({
+			return res.status(resCode).send({
 				status: "successful",
 				email: req.body.email,
 			});
 		}
-		res.status(resCode).sendStatus(resCode);
+		return res.status(resCode).sendStatus(resCode);
 	} catch (e) {
 		console.log(e);
 	}
